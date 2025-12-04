@@ -1,1 +1,10 @@
 fta
+flask
+pandas
+numpy
+vectorbt
+twstock
+pytz
+nlp2
+plotly
+tulipy

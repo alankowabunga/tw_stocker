@@ -112,6 +112,40 @@ source .venv/bin/activate
 python3 main.py example
 ```
 
+### Web 前端界面（Flask）
+
+若不想在終端執行指令，可使用 Flask web 前端查看報表並觸發更新：
+
+```bash
+source .venv/bin/activate
+python3 webapp.py
+```
+
+啟動後，在瀏覽器開啟：
+
+```
+http://localhost:5000
+```
+
+前端功能：
+- **即時顯示最新報表**：首次開啟時直接展示 `stock_report.html`
+- **更新按鈕**：按下「📊 更新」後會在背景執行 `run.sh`（更新資料 → 產生報表）
+- **即時日誌**：更新期間會顯示執行日誌，完成後自動重新載入報表
+
+#### GitHub Pages vs Flask 方式比較
+
+| 項目 | GitHub Pages（線上靜態版） | Flask（本機動態版） |
+|------|---------------------------|-----------------|
+| 訪問方式 | https://voidful.github.io/tw_stocker/stock_report.html | http://localhost:5000（本機） |
+| 部署位置 | GitHub 線上 | 本地/內網伺服器 |
+| 更新方式 | 需手動 push 或 CI/CD 自動化 | 點擊網頁按鈕立即更新 |
+| 互動性 | 無（純靜態 HTML） | 有（按鈕、日誌、自動重載） |
+| 適用場景 | 公開分享、定期自動更新 | 個人開發、隨時查看測試 |
+
+**建議用法**
+- **日常開發測試**：使用 Flask 方式，方便快速迭代與檢視結果
+- **對外分享報表**：定期將最新的 `stock_report.html` push 到 GitHub Pages，供他人查閱
+
 小提示：
 - 若要在背景執行（Linux / macOS），可以使用 `nohup` 或 `&`：
 
@@ -126,6 +160,8 @@ nohup python3 main.py update > update.log 2>&1 &
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+> **安全提醒**：Flask 前端提供了執行 `run.sh` 的功能。請不要直接在公開網路暴露此服務，除非加入認證防護（例如反向代理、IP 限制等）。
 
 ## 使用方式，以2330為例，可以換成自己需要的股票
 
@@ -274,6 +310,11 @@ portfolio.plot().show()
 
 
 報表將輸出至 `stock_report.html`，可用瀏覽器開啟查看。
+
+- 直接在 macOS 用預設瀏覽器開啟：
+````
+open stock_report.html
+````
 
 https://voidful.github.io/tw_stocker/stock_report.html
 

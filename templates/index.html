@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TW Stocker - Report</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 16px; }
+      .controls { margin-bottom: 12px; }
+      button { padding: 8px 12px; margin-right: 8px; }
+      #log { white-space: pre-wrap; background: #f7f7f7; padding: 8px; border: 1px solid #ddd; height: 300px; overflow: auto; }
+      
+      .tabs {
+        display: flex;
+        border-bottom: 2px solid #ddd;
+        margin-bottom: 12px;
+      }
+      
+      .tab-btn {
+        padding: 10px 16px;
+        margin-right: 4px;
+        background: #f0f0f0;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px 4px 0 0;
+      }
+      
+      .tab-btn.active {
+        background: #007bff;
+        color: white;
+      }
+      
+      .tab-btn:hover {
+        background: #ddd;
+      }
+      
+      .tab-btn.active:hover {
+        background: #0056b3;
+      }
+      
+      .tab-content {
+        display: none;
+      }
+      
+      .tab-content.active {
+        display: block;
+      }
+      
+      iframe { width: 100%; height: 800px; border: 1px solid #ccc; }
+    </style>
+  </head>
+  <body>
+    <h1>TW Stocker</h1>
+    <div class="controls">
+      <button id="updateBtn">📊 更新</button>
+      <span id="statusText">狀態: 閒置</span>
+    </div>
+
+    <div id="log" style="display:none;">Logs will appear here...</div>
+    
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('report-tab')">推薦報表</button>
+      <button class="tab-btn" onclick="switchTab('portfolio-tab')">回測圖表</button>
+    </div>
+
+    <div id="report-tab" class="tab-content active">
+      <h2>最新推薦報表</h2>
+      <iframe id="reportFrame" src="/report"></iframe>
+    </div>
+
+    <div id="portfolio-tab" class="tab-content">
+      <h2>交易策略回測圖表</h2>
+      <iframe id="portfolioFrame" src="/portfolio"></iframe>
+    </div>
+
+    <script>
+      const updateBtn = document.getElementById('updateBtn');
+      const statusText = document.getElementById('statusText');
+      const logDiv = document.getElementById('log');
+      const reportFrame = document.getElementById('reportFrame');
+      const portfolioFrame = document.getElementById('portfolioFrame');
+
+      function switchTab(tabId) {
+        // 隱藏所有 tab content
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(c => c.classList.remove('active'));
+        
+        // 移除所有 tab button 的 active 狀態
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        
+        // 顯示選中的 tab
+        document.getElementById(tabId).classList.add('active');
+        event.target.classList.add('active');
+      }
+
+      updateBtn.addEventListener('click', () => {
+        fetch('/run', { method: 'POST' }).then(r => r.json()).then(j => {
+          if (j.status === 'started') {
+            statusText.textContent = '狀態: 執行中';
+            logDiv.style.display = 'block';
+            pollStatus();
+          } else if (j.status === 'already_running') {
+            statusText.textContent = '狀態: 已在執行';
+            logDiv.style.display = 'block';
+            pollStatus();
+          }
+        }).catch(err => {
+          statusText.textContent = '狀態: 錯誤';
+          console.error(err);
+        });
+      });
+
+      let polling = false;
+      function pollStatus() {
+        if (polling) return;
+        polling = true;
+        const iv = setInterval(async () => {
+          try {
+            const res = await fetch('/status');
+            const j = await res.json();
+            statusText.textContent = '狀態: ' + (j.running ? '執行中' : '閒置');
+            logDiv.textContent = j.log || '';
+            if (!j.running) {
+              clearInterval(iv);
+              polling = false;
+              // reload both frames after short delay
+              setTimeout(() => { 
+                reportFrame.src = '/report?ts=' + Date.now();
+                portfolioFrame.src = '/portfolio?ts=' + Date.now();
+              }, 800);
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }, 1500);
+      }
+
+      // initial load: just show the current report, no polling
+      // only start polling when user clicks update
+    </script>
+  </body>
+</html>
