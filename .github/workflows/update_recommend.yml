@@ -1,0 +1,35 @@
+name: Update Recommend
+
+on:
+  schedule:
+    # 每天 UTC 時間 16:00 運行 (即 UTC+8 的 00:00)
+    - cron: '0 16 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12' 
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Pull changes from remote
+        run: git pull origin main
+
+      - name: Update data
+        run: python recommend.py
+
+      - name: Commit and push if changes
+        run: |
+          git config --global user.email "chenyujen0218@gmail.com"
+          git config --global user.name "alan"
+          git add -A
+          git commit -m "Automated stock report update" -a || echo "No changes to commit"
+          git push
